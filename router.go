@@ -13,6 +13,14 @@ type Param struct {
 	Value string
 }
 
+type Node struct {
+	regex    *regexp.Regexp
+	handler  Handler
+	nType    string
+	next     *Node
+	previous *Node
+}
+
 type Params []Param
 
 type Handler func(http.ResponseWriter, *http.Request, Params) error
@@ -102,7 +110,7 @@ func checkValidMethods(method string) bool {
 	return false
 }
 
-func New() *Router {
+func NewRouter() *Router {
 	return &Router{}
 
 }
