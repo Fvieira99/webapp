@@ -1,3 +1,3 @@
-module gorouter
+module webapp
 
 go 1.22.3

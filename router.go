@@ -1,7 +1,9 @@
-package gorouter
+package webapp
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -23,7 +25,7 @@ type Node struct {
 
 type Params []Param
 
-type Handler func(http.ResponseWriter, *http.Request, Params) error
+type Handler func(http.ResponseWriter, *http.Request)
 
 type Router struct {
 	tree map[string]*Node
@@ -58,6 +60,31 @@ func (r *Router) Register(method string, path string, handler Handler) {
 
 	regex := regexp.MustCompile("^" + path + "$")
 	r.AttachRoute(regex, method, handler)
+	fmt.Println("Router Registered Successfully", regex)
+}
+
+func (r *Router) FindRoute(path string, method string, res http.ResponseWriter, req *http.Request) bool {
+	root := r.tree[method]
+
+	if root == nil {
+		fmt.Println("Not Found")
+	}
+
+	regex := regexp.MustCompile("^" + path + "$")
+
+	last := false
+	current := root
+	for !last {
+		if reflect.DeepEqual(current.regex, regex) {
+			current.handler(res, req)
+			return true
+		}
+		if current.next == nil {
+			last = true
+		}
+		current = current.next
+	}
+	return false
 }
 
 func (r *Router) AttachRoute(regex *regexp.Regexp, method string, handler Handler) {
@@ -81,7 +108,7 @@ func (r *Router) AttachRoute(regex *regexp.Regexp, method string, handler Handle
 	attached := false
 	current := root.next
 	for !attached {
-		if current.regex == regex {
+		if reflect.DeepEqual(current.regex, regex) {
 			panic("Route Already Attached to " + method + " Method")
 		}
 		if current.next != nil {
